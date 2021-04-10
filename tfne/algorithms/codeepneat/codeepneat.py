@@ -236,7 +236,7 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
                     genome_fitness = environment.eval_genome_fitness(genome)
                     genome.set_fitness(genome_fitness)
 
-                    genome.save_genotype(self.backup_dir_path)
+                    genome.save_genotype(self.genome_dir_path)
 
                 # Print population evaluation progress bar
                 genome_eval_counter += 1
