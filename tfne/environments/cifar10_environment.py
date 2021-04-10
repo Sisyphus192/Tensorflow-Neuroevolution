@@ -69,6 +69,9 @@ class CIFAR10Environment(BaseEnvironment):
         @param genome: TFNE compatible genome that is to be evaluated
         @return: genome calculated fitness that is the percentage of test images classified correctly
         """
+
+        tf.keras.backend.clear_session()
+
         # Get model and optimizer required for compilation
         model = genome.get_model()
         optimizer = genome.get_optimizer()
@@ -84,7 +87,14 @@ class CIFAR10Environment(BaseEnvironment):
         # Determine fitness by creating model predictions with test images and then judging the fitness based on the
         # achieved model accuracy. Return this fitness
         self.accuracy_metric.reset_states()
-        self.accuracy_metric.update_state(self.squeezed_test_labels, np.argmax(model(self.test_images), axis=-1))
+        predictions = model.predict(self.test_images, batch_size=self.batch_size)
+        self.accuracy_metric.update_state(self.squeezed_test_labels, np.argmax(predictions, axis=-1))
+
+        del model
+        del predictions
+
+        tf.keras.backend.clear_session()
+
         return round(self.accuracy_metric.result().numpy() * 100, 4)
 
     def _eval_genome_fitness_non_weight_training(self, genome) -> float:

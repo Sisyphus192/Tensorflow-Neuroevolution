@@ -19,7 +19,7 @@ from ._codeepneat_evolution_mod import CoDeepNEATEvolutionMOD
 from ._codeepneat_evolution_bp import CoDeepNEATEvolutionBP
 from ._codeepneat_speciation_mod import CoDeepNEATSpeciationMOD
 from ._codeepneat_speciation_bp import CoDeepNEATSpeciationBP
-
+from pathlib import Path
 
 class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
                  CoDeepNEATConfigProcessing,
@@ -35,7 +35,7 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
     See the paper: https://arxiv.org/abs/1703.00548
     """
 
-    def __init__(self, config, initial_state_file_path=None):
+    def __init__(self, config, backup_dir_path, initial_state_file_path=None):
         """
         Initialize the CoDeepNEAT algorithm by processing and sanity checking the supplied configuration, which saves
         all algorithm config parameters as instance variables. Then initialize the CoDeepNEAT encoding and population.
@@ -48,6 +48,9 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
         self.config = config
         self._process_config()
         self._sanity_check_config()
+        self.backup_dir_path = backup_dir_path
+        self.genome_dir_path = os.path.join(backup_dir_path, 'genomes')
+        Path(self.genome_dir_path).mkdir(parents=True, exist_ok=True)
 
         # Declare variables of environment shapes to which the created genomes have to adhere to
         self.input_shape = None
@@ -79,6 +82,10 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
         1 as the node species. Also assign all created blueprints to one species.
         @param environment: instance of the evaluation environment
         """
+
+        self.input_shape = environment.get_input_shape()
+        self.output_shape = environment.get_output_shape()
+
         # If population already initialized, summarize status and abort initialization
         if self.pop.generation_counter is not None:
             print("Using supplied pre-evolved population. Supplied population summary:")
@@ -96,8 +103,6 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
 
         # Determine input and output shape parameters of the environment to which the created genomes of the population
         # have to adhere to
-        self.input_shape = environment.get_input_shape()
-        self.output_shape = environment.get_output_shape()
 
         # Set internal variables of the population to the initialization of a new population
         self.pop.generation_counter = 0
@@ -230,6 +235,8 @@ class CoDeepNEAT(BaseNeuroevolutionAlgorithm,
                     # that instance from the environment list
                     genome_fitness = environment.eval_genome_fitness(genome)
                     genome.set_fitness(genome_fitness)
+
+                    genome.save_genotype(self.backup_dir_path)
 
                 # Print population evaluation progress bar
                 genome_eval_counter += 1

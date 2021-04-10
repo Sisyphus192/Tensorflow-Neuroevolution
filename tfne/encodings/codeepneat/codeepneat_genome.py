@@ -98,20 +98,20 @@ class CoDeepNEATGenome(BaseGenome,
         # are supplied. Set DPI to None regardless of supplied parameters as keras utils API is bugged when supplying
         # DPI for svg plots. See Tensorflow issue: https://github.com/tensorflow/tensorflow/issues/42150
         if 'show_shapes' not in kwargs:
-            kwargs['show_shapes'] = True
+            kwargs['show_shapes'] = False
         if 'show_layer_names' not in kwargs:
-            kwargs['show_layer_names'] = False
-        kwargs['dpi'] = None
+            kwargs['show_layer_names'] = True
+        kwargs['dpi'] = 96
 
         # Create plot of model through keras util
         tf.keras.utils.plot_model(model=self.model, to_file=save_file_path, **kwargs)
 
-        # If visualization is set to show, open it in the default image program
-        if show and platform.system() == 'Windows':
-            save_file_normpath = os.path.normpath(save_file_path)
-            os.startfile(save_file_normpath)
-        elif show:
-            subprocess.Popen(['xdg-open', save_file_path])
+        # # If visualization is set to show, open it in the default image program
+        # if show and platform.system() == 'Windows':
+        #     save_file_normpath = os.path.normpath(save_file_path)
+        #     os.startfile(save_file_normpath)
+        # elif show:
+        #     subprocess.Popen(['xdg-open', save_file_path])
 
         # Return the file path to which the genome plot was saved
         return save_file_path
@@ -161,6 +161,9 @@ class CoDeepNEATGenome(BaseGenome,
         with open(save_file_path, 'w') as save_file:
             json.dump(serialized_genome, save_file, indent=4)
         print(f"Saved CoDeepNEAT genome (ID: {self.genome_id}) to file: {save_file_path}")
+
+        save_model_path = save_dir_path + f"genome_{self.genome_id}_model.h5"
+        self.model.save(save_model_path, include_optimizer = False)
 
         # Return the file path to which the genome was saved
         return save_file_path

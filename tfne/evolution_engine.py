@@ -52,8 +52,9 @@ class EvolutionEngine:
         self.backup_dir_path = os.path.abspath(backup_dir_path)
         if self.backup_dir_path[-1] != '/':
             self.backup_dir_path += '/'
-        backup_dir_str = datetime.now(tz=datetime.now().astimezone().tzinfo)
-        backup_dir_str = backup_dir_str.strftime("tfne_state_backup_%Y-%b-%d_%H-%M-%S/")
+        # backup_dir_str = datetime.now(tz=datetime.now().astimezone().tzinfo)
+        # backup_dir_str = backup_dir_str.strftime("tfne_state_backup_%Y-%b-%d_%H-%M-%S/")
+        backup_dir_str = "tfne_state_backup"
         self.backup_dir_path += backup_dir_str
         os.makedirs(self.backup_dir_path, exist_ok=True)
         print("Creating TFNE generational Backups to directory: {}".format(self.backup_dir_path))
