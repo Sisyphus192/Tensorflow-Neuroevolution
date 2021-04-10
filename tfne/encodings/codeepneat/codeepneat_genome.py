@@ -160,7 +160,7 @@ class CoDeepNEATGenome(BaseGenome,
         # Actually save the just serialzied genome as a json file
         with open(save_file_path, 'w') as save_file:
             json.dump(serialized_genome, save_file, indent=4)
-        print(f"Saved CoDeepNEAT genome (ID: {self.genome_id}) to file: {save_file_path}")
+        # print(f"Saved CoDeepNEAT genome (ID: {self.genome_id}) to file: {save_file_path}")
 
         save_model_path = save_dir_path + f"genome_{self.genome_id}_model.h5"
         self.model.save(save_model_path, include_optimizer = False)
