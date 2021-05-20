@@ -33,13 +33,21 @@ class CoDeepNEATEvolutionMOD:
                         parent_module_1 = self.pop.modules[parent_module_1_id]
                         parent_module_2 = self.pop.modules[parent_module_2_id]
 
-                        # Randomly determine the maximum degree of mutation > 0 and let the modules internal function
-                        # create a crossover
-                        max_degree_of_mutation = random.uniform(1e-323, self.mod_max_mutation)
-                        new_mod_id, new_mod = self.enc.create_crossover_module(parent_module_1,
-                                                                               parent_module_2,
-                                                                               max_degree_of_mutation)
+                        if type(parent_module_1) is type(parent_module_2):
+                            # Randomly determine the maximum degree of mutation > 0 and let the modules internal function
+                            # create a crossover
+                            max_degree_of_mutation = random.uniform(1e-323, self.mod_max_mutation)
+                            new_mod_id, new_mod = self.enc.create_crossover_module(parent_module_1,
+                                                                                parent_module_2,
+                                                                                max_degree_of_mutation)
 
+                        else:
+                            # As species does not have enough modules for crossover, perform a mutation on the remaining
+                            # module
+                            max_degree_of_mutation = random.uniform(1e-323, self.mod_max_mutation)
+                            parent_module = self.pop.modules[random.choice(mod_spec_parents[spec_id])]
+                            new_mod_id, new_mod = self.enc.create_mutated_module(parent_module, max_degree_of_mutation)
+                    
                     else:
                         # As species does not have enough modules for crossover, perform a mutation on the remaining
                         # module
