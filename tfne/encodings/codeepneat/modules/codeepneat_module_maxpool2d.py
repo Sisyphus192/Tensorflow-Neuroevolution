@@ -69,8 +69,8 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         # Uniform randomly set module parameters
         self.merge_method = random.choice(self.config_params['merge_method'])
         self.merge_method['config']['dtype'] = self.dtype
-        self.pool_size = (random.randint(self.config_params['pool_size']['min']), random.randint(self.config_params['pool_size']['max']))
-        self.strides = (random.randint(self.config_params['strides']['min']), random.randint(self.config_params['strides']['max']))
+        self.pool_size = (random.randint(self.config_params['pool_size']['min'], self.config_params['pool_size']['max']), random.randint(self.config_params['pool_size']['min'], self.config_params['pool_size']['max']))
+        self.strides = (random.randint(self.config_params['strides']['min'], self.config_params['strides']['max']), random.randint(self.config_params['strides']['min'], self.config_params['strides']['max']))
         self.padding = random.choice(self.config_params['padding'])
 
     def create_module_layers(self) -> (tf.keras.layers.Layer, ...):
