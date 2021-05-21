@@ -4,3 +4,4 @@ from tfne.encodings.codeepneat.modules.codeepneat_module_base import CoDeepNEATM
 from tfne.encodings.codeepneat.modules.codeepneat_module_conv2dmaxpool2d import \
     CoDeepNEATModuleConv2DMaxPool2D
 from tfne.encodings.codeepneat.modules.codeepneat_module_densedropout import CoDeepNEATModuleDenseDropout
+from tfne.encodings.codeepneat.modules.codeepneat_module_dropout import CoDeepNEATModuleDropout
