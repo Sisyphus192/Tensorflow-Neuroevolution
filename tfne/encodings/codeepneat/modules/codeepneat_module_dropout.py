@@ -172,7 +172,8 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         @param other_module: second Dropout module to which the distance has to be calculated
         @return: float between 0 and 1. High values indicating difference, low values indicating similarity
         """
-
+        if not isinstance(other_module, CoDeepNEATModuleDropout):
+            return 0.0
         # Return the distance as the distance of the average congruence to the perfect congruence of 1.0
         return round(1.0 - (self.rate - other_module.rate)**2, 4)
 

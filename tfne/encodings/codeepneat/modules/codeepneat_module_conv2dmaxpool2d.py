@@ -340,6 +340,9 @@ class CoDeepNEATModuleConv2DMaxPool2D(CoDeepNEATModuleBase):
         @param other_module: second Conv2DMaxPool2D module to which the distance has to be calculated
         @return: float between 0 and 1. High values indicating difference, low values indicating similarity
         """
+        if not isinstance(other_module, CoDeepNEATModuleConv2DMaxPool2D):
+            return 0.0
+    
         congruence_list = list()
         if self.merge_method == other_module.merge_method:
             congruence_list.append(1.0)
