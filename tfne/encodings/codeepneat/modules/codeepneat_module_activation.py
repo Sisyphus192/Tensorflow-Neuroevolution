@@ -155,7 +155,7 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
         """
         # Copy the parameters of this parent module for the parameters of the offspring
         offspring_params = {'merge_method': self.merge_method,
-                            'rate': self.rate}
+                            'activation': self.activation}
 
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': self.module_id,
