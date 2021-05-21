@@ -90,18 +90,25 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         """
         # As the Conv2DMaxPool2D module downsamples with a Conv2D layer, assure that the input and output shape
         # are of dimension 4 and that the second and third channel are identical
-        if not (len(in_shape) == 4 and len(out_shape) == 4) \
-                or in_shape[1] != in_shape[2] \
-                or out_shape[1] != out_shape[2]:
-            raise NotImplementedError(f"Downsampling Layer for the shapes {in_shape} and {out_shape}, not having 4"
-                                      f"channels or differing second and third channels has not yet been implemented "
-                                      f"for the Conv2DMaxPool2D module")
+        if not (len(in_shape) == 4 and len(out_shape) == 4):
+            raise NotImplementedError(f"Downsampling Layer for the shapes {in_shape} and {out_shape}, not having 4 "
+                                      f"channels has not yet been implemented for the Dropout module")
+
+        if in_shape[1] != in_shape[2] or out_shape[1] != out_shape[2]:
+            filters = in_shape[3]
+            kernel_size = in_shape[1] - out_shape[1] + 1
+            return tf.keras.layers.Conv2D(filters=filters,
+                                          kernel_size=kernel_size,
+                                          strides=(1, 1),
+                                          padding='valid',
+                                          activation=None,
+                                          dtype=self.dtype)
 
         # If Only the second and thid channel have to be downsampled then carry over the size of the fourth channel and
         # adjust the kernel size to result in the adjusted second and third channel size
         if out_shape[1] is not None and out_shape[3] is None:
             filters = in_shape[3]
-            kernel_size = in_shape[1] - out_shape[1] + 1
+            kernel_size = (in_shape[1] - out_shape[1] + 1, in_shape[2] - out_shape[2] + 1)
             return tf.keras.layers.Conv2D(filters=filters,
                                           kernel_size=kernel_size,
                                           strides=(1, 1),
