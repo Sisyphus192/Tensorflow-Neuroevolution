@@ -252,7 +252,7 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         parent_mutation = {'parent_id': (self.module_id, less_fit_module.get_id()),
                            'mutation': 'crossover'}
 
-        if random.random <= 0.5:
+        if random.random() <= 0.5:
             offspring_params['merge_method'] = self.merge_method
         else:
             offspring_params['merge_method'] = less_fit_module.merge_method
@@ -260,7 +260,7 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         offspring_params['pool_size'] = ((self.pool_size[0] + less_fit_module.pool_size[0]) // 2, (self.pool_size[1] + less_fit_module.pool_size[1]) // 2)
         offspring_params['strides'] = ((self.strides[0] + less_fit_module.strides[0]) // 2, (self.strides[1] + less_fit_module.strides[1]) // 2)
         
-        if random.random <= 0.5:
+        if random.random() <= 0.5:
             offspring_params['padding'] = self.padding
         else:
             offspring_params['padding'] = less_fit_module.padding
