@@ -77,6 +77,10 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Return the iterable containing all layers present in the module
         return module_layers
 
+    def create_downsampling_layer(self, in_shape, out_shape) -> tf.keras.layers.Layer:
+        """"""
+        raise NotImplementedError("Downsampling has not yet been implemented for Dropout Modules")
+
     def create_mutation(self,
                         offspring_id,
                         max_degree_of_mutation) -> CoDeepNEATModuleDropout:
