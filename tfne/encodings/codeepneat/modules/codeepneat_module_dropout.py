@@ -21,6 +21,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
                  module_id,
                  parent_mutation,
                  dtype,
+                 merge_method=None,
                  rate=None,
                  self_initialization_flag=False):
         """
@@ -37,6 +38,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         super().__init__(config_params, module_id, parent_mutation, dtype)
 
         # Register the module parameters
+        self.merge_method = merge_method
         self.rate = rate
 
         # If self initialization flag is provided, initialize the module parameters as they are currently set to None
@@ -58,6 +60,8 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         variable.
         """
         # Uniform randomly set module parameters
+        self.merge_method = random.choice(self.config_params['merge_method'])
+        self.merge_method['config']['dtype'] = self.dtype
         self.rate = random.uniform(self.config_params['rate']['min'],
                                              self.config_params['rate']['max'])
 
@@ -93,7 +97,8 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         @return: instantiated Dropout module with mutated parameters
         """
         # Copy the parameters of this parent module for the parameters of the offspring
-        offspring_params = {'rate': self.rate}
+        offspring_params = {'merge_method': self.merge_method,
+                            'rate': self.rate}
 
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': self.module_id,
@@ -101,16 +106,19 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
                            'mutated_params': dict()}
 
         # Determine exact integer amount of parameters to be mutated, though minimum is 1
-        param_mutation_count = math.ceil(max_degree_of_mutation * 1)
+        param_mutation_count = math.ceil(max_degree_of_mutation * 2)
 
         # Uniform randomly choose the parameters to be mutated
-        parameters_to_mutate = random.sample(range(1), k=param_mutation_count)
+        parameters_to_mutate = random.sample(range(2), k=param_mutation_count)
 
         # Mutate offspring parameters. Categorical parameters are chosen randomly from all available values. Sortable
         # parameters are perturbed through a random normal distribution with the current value as mean and the config
         # specified stddev
         for param_to_mutate in parameters_to_mutate:
             if param_to_mutate == 0:
+                offspring_params['merge_method'] = random.choice(self.config_params['merge_method'])
+                parent_mutation['mutated_params']['merge_method'] = self.merge_method
+            elif param_to_mutate == 1:
                 perturbed_rate = np.random.normal(loc=self.rate,
                                                     scale=self.config_params['rate']['stddev'])
                 offspring_params['rate'] = max(min(perturbed_rate, self.config_params['rate']['max']), self.config_params['rate']['min'])
@@ -141,9 +149,8 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': (self.module_id, less_fit_module.get_id()),
                            'mutation': 'crossover'}
-
-        crossed_over_rate = ((self.rate + less_fit_module.rate) / 2)
-        offspring_params['rate'] = crossed_over_rate
+        offspring_params['merge_method'] = self.merge_method
+        offspring_params['rate'] = ((self.rate + less_fit_module.rate) / 2)
 
         return CoDeepNEATModuleDropout(config_params=self.config_params,
                                                       module_id=offspring_id,
@@ -159,6 +166,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
             'module_type': self.get_module_type(),
             'module_id': self.module_id,
             'parent_mutation': self.parent_mutation,
+            'merge_method': self.merge_method,
             'rate': self.rate
         }
 
@@ -174,8 +182,19 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         """
         if not isinstance(other_module, CoDeepNEATModuleDropout):
             return 0.0
+    
+        congruence_list = list()
+        if self.merge_method == other_module.merge_method:
+            congruence_list.append(1.0)
+        else:
+            congruence_list.append(1 / len(self.config_params['merge_method']))
+        if self.rate >= other_module.rate:
+            congruence_list.append(other_module.rate / self.rate)
+        else:
+            congruence_list.append(self.rate / other_module.rate)
+        
         # Return the distance as the distance of the average congruence to the perfect congruence of 1.0
-        return round(1.0 - (self.rate - other_module.rate)**2, 4)
+        return round(1.0 - statistics.mean(congruence_list), 4)
 
     def get_module_type(self) -> str:
         """"""
