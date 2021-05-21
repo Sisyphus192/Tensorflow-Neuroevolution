@@ -207,7 +207,10 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': (self.module_id, less_fit_module.get_id()),
                            'mutation': 'crossover'}
-        offspring_params['merge_method'] = self.merge_method
+        if random.random <= 0.5:
+            offspring_params['merge_method'] = self.merge_method
+        else:
+            offspring_params['merge_method'] = less_fit_module.merge_method
         offspring_params['rate'] = ((self.rate + less_fit_module.rate) / 2)
 
         return CoDeepNEATModuleDropout(config_params=self.config_params,

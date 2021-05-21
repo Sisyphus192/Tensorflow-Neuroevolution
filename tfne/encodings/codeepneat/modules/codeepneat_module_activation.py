@@ -73,7 +73,7 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
         # Create iterable that contains all layers concatenated in this module
         module_layers = list()
 
-        activation_layer = tf.keras.layers.Activation(rate=self.activation,
+        activation_layer = tf.keras.layers.Activation(activation=self.activation,
                                                     dtype=self.dtype)
         module_layers.append(activation_layer)
 
@@ -206,10 +206,13 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
                            'mutation': 'crossover'}
         if random.random() < 0.5:
             offspring_params['merge_method'] = self.merge_method
-            offspring_params['activation'] = less_fit_module.activation
         else:
             offspring_params['merge_method'] = less_fit_module.merge_method
+            
+        if random.random() < 0.5:
             offspring_params['activation'] = self.activation
+        else:
+            offspring_params['activation'] = less_fit_module.activation
 
         return CoDeepNEATModuleActivation(config_params=self.config_params,
                                                       module_id=offspring_id,

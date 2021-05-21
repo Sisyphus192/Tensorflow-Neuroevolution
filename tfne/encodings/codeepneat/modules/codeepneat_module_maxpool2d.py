@@ -69,8 +69,8 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         # Uniform randomly set module parameters
         self.merge_method = random.choice(self.config_params['merge_method'])
         self.merge_method['config']['dtype'] = self.dtype
-        self.pool_size = random.choice(self.config_params['kernel_size'])
-        self.strides = random.choice(self.config_params['strides'])
+        self.pool_size = (random.choice(self.config_params['pool_size']), random.choice(self.config_params['pool_size']))
+        self.strides = (random.choice(self.config_params['strides']), random.choice(self.config_params['strides']))
         self.padding = random.choice(self.config_params['padding'])
 
     def create_module_layers(self) -> (tf.keras.layers.Layer, ...):
@@ -83,6 +83,8 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         module_layers = list()
 
         max_pool_layer = tf.keras.layers.MaxPool2D(pool_size=self.pool_size,
+                                                    strides=self.strides,
+                                                    padding=self.padding,
                                                     dtype=self.dtype)
         module_layers.append(max_pool_layer)
 
@@ -164,15 +166,9 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         """
         # Copy the parameters of this parent module for the parameters of the offspring
         offspring_params = {'merge_method': self.merge_method,
-                            'filters': self.filters,
-                            'kernel_size': self.kernel_size,
+                            'pool_size': self.pool_size,
                             'strides': self.strides,
-                            'padding': self.padding,
-                            'activation': self.activation,
-                            'kernel_init': self.kernel_init,
-                            'bias_init': self.bias_init,
-                            'max_pool_flag': self.max_pool_flag,
-                            'max_pool_size': self.max_pool_size}
+                            'padding': self.padding}
 
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': self.module_id,
@@ -180,10 +176,10 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
                            'mutated_params': dict()}
 
         # Determine exact integer amount of parameters to be mutated, though minimum is 1
-        param_mutation_count = math.ceil(max_degree_of_mutation * 12)
+        param_mutation_count = math.ceil(max_degree_of_mutation * 4)
 
         # Uniform randomly choose the parameters to be mutated
-        parameters_to_mutate = random.sample(range(12), k=param_mutation_count)
+        parameters_to_mutate = random.sample(range(4), k=param_mutation_count)
 
         # Mutate offspring parameters. Categorical parameters are chosen randomly from all available values. Sortable
         # parameters are perturbed through a random normal distribution with the current value as mean and the config
@@ -193,12 +189,32 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
                 offspring_params['merge_method'] = random.choice(self.config_params['merge_method'])
                 parent_mutation['mutated_params']['merge_method'] = self.merge_method
             elif param_to_mutate == 1:
-                offspring_params['pool_size'] = random.choice(self.config_params['pool_size'])
+                perturbed_pool_size_x = round_with_step(np.random.normal(loc=self.pool_size[0],
+                                                            scale=self.config_params['pool_size']['stddev']),
+                                                        self.config_params['pool_size']['min'],
+                                                        self.config_params['pool_size']['max'],
+                                                        self.config_params['pool_size']['step'])
+                perturbed_pool_size_y = round_with_step(np.random.normal(loc=self.pool_size[1],
+                                                            scale=self.config_params['pool_size']['stddev']),
+                                                        self.config_params['pool_size']['min'],
+                                                        self.config_params['pool_size']['max'],
+                                                        self.config_params['pool_size']['step'])
+                offspring_params['pool_size'] = (int(perturbed_pool_size_x), int(perturbed_pool_size_y))
                 parent_mutation['mutated_params']['pool_size'] = self.pool_size
-            elif param_to_mutate == 3:
-                offspring_params['strides'] = random.choice(self.config_params['strides'])
+            elif param_to_mutate == 2:
+                perturbed_strides_x = round_with_step(np.random.normal(loc=self.strides[0],
+                                                            scale=self.config_params['strides']['stddev']),
+                                                        self.config_params['strides']['min'],
+                                                        self.config_params['strides']['max'],
+                                                        self.config_params['strides']['step'])
+                perturbed_strides_y = round_with_step(np.random.normal(loc=self.strides[1],
+                                                            scale=self.config_params['strides']['stddev']),
+                                                        self.config_params['strides']['min'],
+                                                        self.config_params['strides']['max'],
+                                                        self.config_params['strides']['step'])
+                offspring_params['strides'] = (int(perturbed_strides_x), int(perturbed_strides_y))
                 parent_mutation['mutated_params']['strides'] = self.strides
-            elif param_to_mutate == 4:
+            elif param_to_mutate == 3:
                 offspring_params['padding'] = random.choice(self.config_params['padding'])
                 parent_mutation['mutated_params']['padding'] = self.padding
 
@@ -228,10 +244,18 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         parent_mutation = {'parent_id': (self.module_id, less_fit_module.get_id()),
                            'mutation': 'crossover'}
 
-        offspring_params['merge_method'] = self.merge_method
-        offspring_params['pool_size'] = self.pool_size
-        offspring_params['strides'] = self.strides
-        offspring_params['padding'] = self.padding
+        if random.random <= 0.5:
+            offspring_params['merge_method'] = self.merge_method
+        else:
+            offspring_params['merge_method'] = less_fit_module.merge_method
+        
+        offspring_params['pool_size'] = ((self.pool_size[0] + less_fit_module.pool_size[0]) // 2, (self.pool_size[1] + less_fit_module.pool_size[1]) // 2)
+        offspring_params['strides'] = ((self.strides[0] + less_fit_module.strides[0]) // 2, (self.strides[1] + less_fit_module.strides[1]) // 2)
+        
+        if random.random <= 0.5:
+            offspring_params['padding'] = self.padding
+        else:
+            offspring_params['padding'] = less_fit_module.padding
 
         return CoDeepNEATModuleMaxPool2D(config_params=self.config_params,
                                                       module_id=offspring_id,
@@ -274,11 +298,25 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         if self.pool_size == other_module.pool_size:
             congruence_list.append(1.0)
         else:
-            congruence_list.append(1 / len(self.config_params['pool_size']))
+            if self.pool_size[0] >= other_module.pool_size[0]:
+                congruence_list.append(other_module.pool_size[0] / self.pool_size[0])
+            else:
+                congruence_list.append(self.pool_size[0] / other_module.pool_size[0])
+            if self.pool_size[1] >= other_module.pool_size[1]:
+                congruence_list.append(other_module.pool_size[1] / self.pool_size[1])
+            else:
+                congruence_list.append(self.pool_size[1] / other_module.pool_size[1])
         if self.strides == other_module.strides:
             congruence_list.append(1.0)
         else:
-            congruence_list.append(1 / len(self.config_params['strides']))
+            if self.pool_size[0] >= other_module.pool_size[0]:
+                congruence_list.append(other_module.pool_size[0] / self.pool_size[0])
+            else:
+                congruence_list.append(self.pool_size[0] / other_module.pool_size[0])
+            if self.pool_size[1] >= other_module.pool_size[1]:
+                congruence_list.append(other_module.pool_size[1] / self.pool_size[1])
+            else:
+                congruence_list.append(self.pool_size[1] / other_module.pool_size[1])
         if self.padding == other_module.padding:
             congruence_list.append(1.0)
         else:

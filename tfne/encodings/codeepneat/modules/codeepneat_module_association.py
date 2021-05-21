@@ -8,7 +8,7 @@ from .codeepneat_module_activation import CoDeepNEATModuleActivation
 # the respective module
 MODULES = {
     'DenseDropout': CoDeepNEATModuleDenseDropout,
-    'Conv2DMaxPool2D': CoDeepNEATModuleConv2D,
+    'Conv2D': CoDeepNEATModuleConv2D,
     'Dropout': CoDeepNEATModuleDropout,
     'MaxPool2D': CoDeepNEATModuleMaxPool2D,
     'Activation': CoDeepNEATModuleActivation
