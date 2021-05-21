@@ -56,10 +56,12 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         """
         @return: string representation of the module
         """
-        return "CoDeepNEAT MaxPool2D Module | ID: {:>6} | Fitness: {:>6} | Pool Size: {:>6}" \
+        return "CoDeepNEAT MaxPool2D Module | ID: {:>6} | Fitness: {:>6} | Pool Size: {:>6} | Strides: {:>6} | Padding: {:>6}" \
             .format('#' + str(self.module_id),
                     self.fitness,
-                    str(self.pool_size))
+                    str(self.pool_size),
+                    str(self.strides),
+                    self.padding)
 
     def _initialize(self):
         """
@@ -69,8 +71,14 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         # Uniform randomly set module parameters
         self.merge_method = random.choice(self.config_params['merge_method'])
         self.merge_method['config']['dtype'] = self.dtype
-        self.pool_size = (random.randint(self.config_params['pool_size']['min'], self.config_params['pool_size']['max']), random.randint(self.config_params['pool_size']['min'], self.config_params['pool_size']['max']))
-        self.strides = (random.randint(self.config_params['strides']['min'], self.config_params['strides']['max']), random.randint(self.config_params['strides']['min'], self.config_params['strides']['max']))
+        self.pool_size = (random.randint(int(self.config_params['pool_size']['min']), 
+                                         int(self.config_params['pool_size']['max'])), 
+                          random.randint(int(self.config_params['pool_size']['min']),
+                                         int(self.config_params['pool_size']['max'])))
+        self.strides = (random.randint(int(self.config_params['strides']['min']), 
+                                         int(self.config_params['strides']['max'])), 
+                          random.randint(int(self.config_params['strides']['min']),
+                                         int(self.config_params['strides']['max'])))
         self.padding = random.choice(self.config_params['padding'])
 
     def create_module_layers(self) -> (tf.keras.layers.Layer, ...):

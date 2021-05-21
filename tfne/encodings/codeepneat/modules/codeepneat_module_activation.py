@@ -49,7 +49,7 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
         """
         @return: string representation of the module
         """
-        return "CoDeepNEAT Dropout Module | ID: {:>6} | Fitness: {:>6} | Activation: {}" \
+        return "CoDeepNEAT Activation Module | ID: {:>6} | Fitness: {:>6} | Activ: {}" \
             .format('#' + str(self.module_id),
                     self.fitness,
                     self.activation)
@@ -91,7 +91,7 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
         # are of dimension 4 and that the second and third channel are identical
         if not (len(in_shape) == 4 and len(out_shape) == 4):
             raise NotImplementedError(f"Downsampling Layer for the shapes {in_shape} and {out_shape}, not having 4 "
-                                      f"channels has not yet been implemented for the Dropout module")
+                                      f"channels has not yet been implemented for the Activation module")
 
         if in_shape[1] != in_shape[2] or out_shape[1] != out_shape[2]:
             filters = in_shape[3]
@@ -146,12 +146,12 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
                         offspring_id,
                         max_degree_of_mutation) -> CoDeepNEATModuleActivation:
         """
-        Create mutated Dropout module and return it. Categorical parameters are chosen randomly from all
+        Create mutated Activation module and return it. Categorical parameters are chosen randomly from all
         available values. Sortable parameters are perturbed through a random normal distribution with the current value
         as mean and the config specified stddev
         @param offspring_id: int of unique module ID of the offspring
         @param max_degree_of_mutation: float between 0 and 1 specifying the maximum degree of mutation
-        @return: instantiated Dropout module with mutated parameters
+        @return: instantiated Activation module with mutated parameters
         """
         # Copy the parameters of this parent module for the parameters of the offspring
         offspring_params = {'merge_method': self.merge_method,
@@ -190,12 +190,12 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
                          less_fit_module,
                          max_degree_of_mutation) -> CoDeepNEATModuleActivation:
         """
-        Create crossed over Dropout module and return it. Carry over parameters of fitter parent for
+        Create crossed over Activation module and return it. Carry over parameters of fitter parent for
         categorical parameters and calculate parameter average between both modules for sortable parameters
         @param offspring_id: int of unique module ID of the offspring
-        @param less_fit_module: second Dropout module with lower fitness
+        @param less_fit_module: second Activation module with lower fitness
         @param max_degree_of_mutation: float between 0 and 1 specifying the maximum degree of mutation
-        @return: instantiated Dropout module with crossed over parameters
+        @return: instantiated Activation module with crossed over parameters
         """
         # Create offspring parameters by carrying over parameters of fitter parent for categorical parameters and
         # calculating parameter average between both modules for sortable parameters
@@ -234,12 +234,12 @@ class CoDeepNEATModuleActivation(CoDeepNEATModuleBase):
 
     def get_distance(self, other_module) -> float:
         """
-        Calculate distance between 2 Dropout modules by inspecting each parameter, calculating the
+        Calculate distance between 2 Activation modules by inspecting each parameter, calculating the
         congruence between each and eventually averaging the out the congruence. The distance is returned as the average
         congruences distance to 1.0. The congruence of continuous parameters is calculated by their relative distance.
         The congruence of categorical parameters is either 1.0 in case they are the same or it's 1 divided to the amount
         of possible values for that specific parameter. Return the calculated distance.
-        @param other_module: second Dropout module to which the distance has to be calculated
+        @param other_module: second Activation module to which the distance has to be calculated
         @return: float between 0 and 1. High values indicating difference, low values indicating similarity
         """
         if not isinstance(other_module, CoDeepNEATModuleActivation):
