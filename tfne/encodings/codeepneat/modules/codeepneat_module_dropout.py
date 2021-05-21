@@ -82,8 +82,59 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         return module_layers
 
     def create_downsampling_layer(self, in_shape, out_shape) -> tf.keras.layers.Layer:
-        """"""
-        raise NotImplementedError("Downsampling has not yet been implemented for Dropout Modules")
+        """
+        Create Conv2D layer that downsamples the non compatible input shape to a compatible input shape of the module
+        @param in_shape: int tuple of incompatible input shape
+        @param out_shape: int tuple of the intended output shape of the downsampling layer
+        @return: instantiated TF Conv2D layer that can downsample in_shape to out_shape
+        """
+        # As the Conv2DMaxPool2D module downsamples with a Conv2D layer, assure that the input and output shape
+        # are of dimension 4 and that the second and third channel are identical
+        if not (len(in_shape) == 4 and len(out_shape) == 4) \
+                or in_shape[1] != in_shape[2] \
+                or out_shape[1] != out_shape[2]:
+            raise NotImplementedError(f"Downsampling Layer for the shapes {in_shape} and {out_shape}, not having 4"
+                                      f"channels or differing second and third channels has not yet been implemented "
+                                      f"for the Conv2DMaxPool2D module")
+
+        # If Only the second and thid channel have to be downsampled then carry over the size of the fourth channel and
+        # adjust the kernel size to result in the adjusted second and third channel size
+        if out_shape[1] is not None and out_shape[3] is None:
+            filters = in_shape[3]
+            kernel_size = in_shape[1] - out_shape[1] + 1
+            return tf.keras.layers.Conv2D(filters=filters,
+                                          kernel_size=kernel_size,
+                                          strides=(1, 1),
+                                          padding='valid',
+                                          activation=None,
+                                          dtype=self.dtype)
+
+        # If Only the fourth channel has to be downsampled then carry over the size of the second and fourth channel and
+        # adjust the filters to result in the adjusted fourth channel size
+        elif out_shape[1] is None and out_shape[3] is not None:
+            filters = out_shape[3]
+            kernel_size = in_shape[1]
+            return tf.keras.layers.Conv2D(filters=filters,
+                                          kernel_size=kernel_size,
+                                          strides=(1, 1),
+                                          padding='same',
+                                          activation=None,
+                                          dtype=self.dtype)
+
+        # If the second, third and fourth channel have to be downsampled adjust both the filters and kernel size
+        # accordingly to result in the desired output shape
+        elif out_shape[1] is not None and out_shape[3] is not None:
+            filters = out_shape[3]
+            kernel_size = in_shape[1] - out_shape[1] + 1
+            return tf.keras.layers.Conv2D(filters=filters,
+                                          kernel_size=kernel_size,
+                                          strides=(1, 1),
+                                          padding='valid',
+                                          activation=None,
+                                          dtype=self.dtype)
+        else:
+            raise RuntimeError(f"Downsampling to output shape {out_shape} from input shape {in_shape} not possible"
+                               f"with a Conv2D layer")
 
     def create_mutation(self,
                         offspring_id,
