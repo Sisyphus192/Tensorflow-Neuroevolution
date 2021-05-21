@@ -159,7 +159,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
             'module_type': self.get_module_type(),
             'module_id': self.module_id,
             'parent_mutation': self.parent_mutation,
-            'rate': self.filters
+            'rate': self.rate
         }
 
     def get_distance(self, other_module) -> float:
