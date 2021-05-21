@@ -11,9 +11,9 @@ from .codeepneat_module_base import CoDeepNEATModuleBase
 from tfne.helper_functions import round_with_step
 
 
-class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
+class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
     """
-    TFNE CoDeepNEAT module encapsulating a Dropout layer.
+    TFNE CoDeepNEAT module encapsulating a MaxPool2D layer. The downsampling layer is another Conv2D layer.
     """
 
     def __init__(self,
@@ -22,7 +22,9 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
                  parent_mutation,
                  dtype,
                  merge_method=None,
-                 rate=None,
+                 pool_size=None,
+                 strides=None,
+                 padding=None,
                  self_initialization_flag=False):
         """
         Create module by storing supplied parameters. If self initialization flag is supplied, randomly initialize the
@@ -31,7 +33,10 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         @param module_id: int of unique module ID
         @param parent_mutation: dict summarizing the mutation of the parent module
         @param dtype: string of deserializable TF dtype
-        @param rate: see TF documentation
+        @param merge_method: dict representing a TF deserializable merge layer
+        @param pool_size: see TF documentation
+        @param strides: see TF documentation
+        @param padding: see TF documentation
         @param self_initialization_flag: bool flag indicating if all module parameters should be randomly initialized
         """
         # Register the implementation specifics by calling parent class
@@ -39,7 +44,9 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
 
         # Register the module parameters
         self.merge_method = merge_method
-        self.rate = rate
+        self.pool_size = pool_size
+        self.strides = strides
+        self.padding = padding
 
         # If self initialization flag is provided, initialize the module parameters as they are currently set to None
         if self_initialization_flag:
@@ -49,10 +56,10 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         """
         @return: string representation of the module
         """
-        return "CoDeepNEAT Dropout Module | ID: {:>6} | Fitness: {:>6} | Rate: {:>4}" \
+        return "CoDeepNEAT MaxPool2D Module | ID: {:>6} | Fitness: {:>6} | Pool Size: {:>6}" \
             .format('#' + str(self.module_id),
                     self.fitness,
-                    self.rate)
+                    self.pool_size)
 
     def _initialize(self):
         """
@@ -62,8 +69,9 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Uniform randomly set module parameters
         self.merge_method = random.choice(self.config_params['merge_method'])
         self.merge_method['config']['dtype'] = self.dtype
-        self.rate = random.uniform(self.config_params['rate']['min'],
-                                             self.config_params['rate']['max'])
+        self.pool_size = random.choice(self.config_params['kernel_size'])
+        self.strides = random.choice(self.config_params['strides'])
+        self.padding = random.choice(self.config_params['padding'])
 
     def create_module_layers(self) -> (tf.keras.layers.Layer, ...):
         """
@@ -74,9 +82,9 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Create iterable that contains all layers concatenated in this module
         module_layers = list()
 
-        dropout_layer = tf.keras.layers.Dropout(rate=self.rate,
+        max_pool_layer = tf.keras.layers.MaxPool2D(pool_size=self.pool_size,
                                                     dtype=self.dtype)
-        module_layers.append(dropout_layer)
+        module_layers.append(max_pool_layer)
 
         # Return the iterable containing all layers present in the module
         return module_layers
@@ -88,7 +96,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         @param out_shape: int tuple of the intended output shape of the downsampling layer
         @return: instantiated TF Conv2D layer that can downsample in_shape to out_shape
         """
-        # As the Conv2DMaxPool2D module downsamples with a Conv2D layer, assure that the input and output shape
+        # As the MaxPool2D module downsamples with a Conv2D layer, assure that the input and output shape
         # are of dimension 4 and that the second and third channel are identical
         if not (len(in_shape) == 4 and len(out_shape) == 4):
             raise NotImplementedError(f"Downsampling Layer for the shapes {in_shape} and {out_shape}, not having 4 "
@@ -108,7 +116,7 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # adjust the kernel size to result in the adjusted second and third channel size
         if out_shape[1] is not None and out_shape[3] is None:
             filters = in_shape[3]
-            kernel_size = (in_shape[1] - out_shape[1] + 1, in_shape[2] - out_shape[2] + 1)
+            kernel_size = in_shape[1] - out_shape[1] + 1
             return tf.keras.layers.Conv2D(filters=filters,
                                           kernel_size=kernel_size,
                                           strides=(1, 1),
@@ -145,18 +153,26 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
 
     def create_mutation(self,
                         offspring_id,
-                        max_degree_of_mutation) -> CoDeepNEATModuleDropout:
+                        max_degree_of_mutation) -> CoDeepNEATModuleMaxPool2D:
         """
-        Create mutated Dropout module and return it. Categorical parameters are chosen randomly from all
+        Create mutated MaxPool2D module and return it. Categorical parameters are chosen randomly from all
         available values. Sortable parameters are perturbed through a random normal distribution with the current value
         as mean and the config specified stddev
         @param offspring_id: int of unique module ID of the offspring
         @param max_degree_of_mutation: float between 0 and 1 specifying the maximum degree of mutation
-        @return: instantiated Dropout module with mutated parameters
+        @return: instantiated MaxPool2D module with mutated parameters
         """
         # Copy the parameters of this parent module for the parameters of the offspring
         offspring_params = {'merge_method': self.merge_method,
-                            'rate': self.rate}
+                            'filters': self.filters,
+                            'kernel_size': self.kernel_size,
+                            'strides': self.strides,
+                            'padding': self.padding,
+                            'activation': self.activation,
+                            'kernel_init': self.kernel_init,
+                            'bias_init': self.bias_init,
+                            'max_pool_flag': self.max_pool_flag,
+                            'max_pool_size': self.max_pool_size}
 
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': self.module_id,
@@ -164,10 +180,10 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
                            'mutated_params': dict()}
 
         # Determine exact integer amount of parameters to be mutated, though minimum is 1
-        param_mutation_count = math.ceil(max_degree_of_mutation * 2)
+        param_mutation_count = math.ceil(max_degree_of_mutation * 12)
 
         # Uniform randomly choose the parameters to be mutated
-        parameters_to_mutate = random.sample(range(2), k=param_mutation_count)
+        parameters_to_mutate = random.sample(range(12), k=param_mutation_count)
 
         # Mutate offspring parameters. Categorical parameters are chosen randomly from all available values. Sortable
         # parameters are perturbed through a random normal distribution with the current value as mean and the config
@@ -177,12 +193,16 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
                 offspring_params['merge_method'] = random.choice(self.config_params['merge_method'])
                 parent_mutation['mutated_params']['merge_method'] = self.merge_method
             elif param_to_mutate == 1:
-                perturbed_rate = np.random.normal(loc=self.rate,
-                                                    scale=self.config_params['rate']['stddev'])
-                offspring_params['rate'] = max(min(perturbed_rate, self.config_params['rate']['max']), self.config_params['rate']['min'])
-                parent_mutation['mutated_params']['rate'] = self.rate
+                offspring_params['pool_size'] = random.choice(self.config_params['pool_size'])
+                parent_mutation['mutated_params']['pool_size'] = self.pool_size
+            elif param_to_mutate == 3:
+                offspring_params['strides'] = random.choice(self.config_params['strides'])
+                parent_mutation['mutated_params']['strides'] = self.strides
+            elif param_to_mutate == 4:
+                offspring_params['padding'] = random.choice(self.config_params['padding'])
+                parent_mutation['mutated_params']['padding'] = self.padding
 
-        return CoDeepNEATModuleDropout(config_params=self.config_params,
+        return CoDeepNEATModuleMaxPool2D(config_params=self.config_params,
                                                       module_id=offspring_id,
                                                       parent_mutation=parent_mutation,
                                                       dtype=self.dtype,
@@ -191,14 +211,14 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
     def create_crossover(self,
                          offspring_id,
                          less_fit_module,
-                         max_degree_of_mutation) -> CoDeepNEATModuleDropout:
+                         max_degree_of_mutation) -> CoDeepNEATModuleMaxPool2D:
         """
-        Create crossed over Dropout module and return it. Carry over parameters of fitter parent for
+        Create crossed over MaxPool2D module and return it. Carry over parameters of fitter parent for
         categorical parameters and calculate parameter average between both modules for sortable parameters
         @param offspring_id: int of unique module ID of the offspring
-        @param less_fit_module: second Dropout module with lower fitness
+        @param less_fit_module: second MaxPool2D module with lower fitness
         @param max_degree_of_mutation: float between 0 and 1 specifying the maximum degree of mutation
-        @return: instantiated Dropout module with crossed over parameters
+        @return: instantiated MaxPool2D module with crossed over parameters
         """
         # Create offspring parameters by carrying over parameters of fitter parent for categorical parameters and
         # calculating parameter average between both modules for sortable parameters
@@ -207,10 +227,13 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         # Create the dict that keeps track of the mutations occuring for the offspring
         parent_mutation = {'parent_id': (self.module_id, less_fit_module.get_id()),
                            'mutation': 'crossover'}
-        offspring_params['merge_method'] = self.merge_method
-        offspring_params['rate'] = ((self.rate + less_fit_module.rate) / 2)
 
-        return CoDeepNEATModuleDropout(config_params=self.config_params,
+        offspring_params['merge_method'] = self.merge_method
+        offspring_params['pool_size'] = self.pool_size
+        offspring_params['strides'] = self.strides
+        offspring_params['padding'] = self.padding
+
+        return CoDeepNEATModuleMaxPool2D(config_params=self.config_params,
                                                       module_id=offspring_id,
                                                       parent_mutation=parent_mutation,
                                                       dtype=self.dtype,
@@ -225,20 +248,22 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
             'module_id': self.module_id,
             'parent_mutation': self.parent_mutation,
             'merge_method': self.merge_method,
-            'rate': self.rate
+            'pool_size': self.pool_size,
+            'strides': self.strides,
+            'padding': self.padding,
         }
 
     def get_distance(self, other_module) -> float:
         """
-        Calculate distance between 2 Dropout modules by inspecting each parameter, calculating the
+        Calculate distance between 2 MaxPool2D modules by inspecting each parameter, calculating the
         congruence between each and eventually averaging the out the congruence. The distance is returned as the average
         congruences distance to 1.0. The congruence of continuous parameters is calculated by their relative distance.
         The congruence of categorical parameters is either 1.0 in case they are the same or it's 1 divided to the amount
         of possible values for that specific parameter. Return the calculated distance.
-        @param other_module: second Dropout module to which the distance has to be calculated
+        @param other_module: second MaxPool2D module to which the distance has to be calculated
         @return: float between 0 and 1. High values indicating difference, low values indicating similarity
         """
-        if not isinstance(other_module, CoDeepNEATModuleDropout):
+        if not isinstance(other_module, CoDeepNEATModuleMaxPool2D):
             return 0.0
     
         congruence_list = list()
@@ -246,16 +271,22 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
             congruence_list.append(1.0)
         else:
             congruence_list.append(1 / len(self.config_params['merge_method']))
-        if self.rate == 0 or other_module.rate == 0:
-            congruence_list.append(0.0)
-        elif self.rate >= other_module.rate:
-            congruence_list.append(other_module.rate / self.rate)
+        if self.pool_size == other_module.pool_size:
+            congruence_list.append(1.0)
         else:
-            congruence_list.append(self.rate / other_module.rate)
-        
+            congruence_list.append(1 / len(self.config_params['pool_size']))
+        if self.strides == other_module.strides:
+            congruence_list.append(1.0)
+        else:
+            congruence_list.append(1 / len(self.config_params['strides']))
+        if self.padding == other_module.padding:
+            congruence_list.append(1.0)
+        else:
+            congruence_list.append(1 / len(self.config_params['padding']))
+
         # Return the distance as the distance of the average congruence to the perfect congruence of 1.0
         return round(1.0 - statistics.mean(congruence_list), 4)
 
     def get_module_type(self) -> str:
         """"""
-        return 'Dropout'
+        return 'MaxPool2D'
