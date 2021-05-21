@@ -58,8 +58,8 @@ class CoDeepNEATModuleDropout(CoDeepNEATModuleBase):
         variable.
         """
         # Uniform randomly set module parameters
-        self.rate = random.uniform(self.config_params['dropout_rate']['min'],
-                                             self.config_params['dropout_rate']['max'])
+        self.rate = random.uniform(self.config_params['rate']['min'],
+                                             self.config_params['rate']['max'])
 
     def create_module_layers(self) -> (tf.keras.layers.Layer, ...):
         """
