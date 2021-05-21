@@ -59,7 +59,7 @@ class CoDeepNEATModuleMaxPool2D(CoDeepNEATModuleBase):
         return "CoDeepNEAT MaxPool2D Module | ID: {:>6} | Fitness: {:>6} | Pool Size: {:>6}" \
             .format('#' + str(self.module_id),
                     self.fitness,
-                    self.pool_size)
+                    str(self.pool_size))
 
     def _initialize(self):
         """
